@@ -17,23 +17,23 @@ There are 3 main theories about the purpose of base64:
 
 2) Because some older systems think that data consists of 7-bit chunks (bytes), whereas modern ones use 8-bit bytes. This may lead to misunderstanding between systems. And base64 presumably can help with this too - but it's not so obvious how.
 
-3) Because some characters may have special meaning and this will differ from from system to system. Base64 tackles this by using only the most "purely textual" characters from ASCII set.
+3) Because some characters may have special meaning and this will differ from system to system. Base64 tackles this by using only the most "purely textual" characters from ASCII set.
 
 ---
 
 ### When base64?
 
-In what contexts can we face 3 problems mentioned above? Wikipedia in 2023 says that base64 is used "to __carry data across channels__ that only reliably support text content".
+There is of course an infinite number of situations where you need to present data as base64 gibberish. But let's try to narrow the scope of the problem. The official spec (RFC4648) says that base64 "is used in many situations to __store__ or __transfer__ data in environments that, perhaps for legacy reasons, are restricted to ASCII data".
 
-Alright, base64 may be necessary to __transmit__ data from one place to another. When data is transmitted, it has to satisfy the rules of a transmission protocol. Sometimes these rules are too strict and in such case base64 is used to bypass them.
+So we need base 64 when
 
-But transmission is perhaps not the only case. RFC4648 (the official spec) says that base64 is used "...to __store__ or transfer data in environments that are restricted to ASCII data". But store what, where and when? RFC gives no further clarification.
+1) incompatible data is __transmitted__ through the network. First of all it's a problem of emails - for example, encoding is necessary when you need to attach a file to an email message. It was the reason why base64 was first introduced.
 
-It  continues that base64 "...makes it possible to manipulate objects with text editors". What text editors? This thread is also difficult to develop.
+2) incompatible data is __stored__ in files or elsewhere. Often you need to embed non-textual data in a text file like JSON, XML or HTML. Or to store something fancy in a brower cookie (and cookies must be only text).
 
-Hereafter base64 will be discussed mostly as an instrument of data transmission because all other contexts are a bit too obscure.
+RFC continues that base64 also
 
----
+3) "makes it possible to manipulate objects with __text editors__". But this thread is difficult to develop. It might be that programs like Microsoft Word use base64 for embedded images but I can't say for sure. Let's leave it to more persistent researchers.
 
 ### A case of SMTP
 
@@ -161,20 +161,26 @@ So why base64 is used for data URLs at all? Could we use some less wasteful enco
 
 At present it's impossible because browsers allow only __url-safe characters__ in Data URLs. And there aren't too much url-safe characters - just a tiny bit more than 64. Why are we restricted to url-safe characters? Because we insert the encoded data into places where browsers expect a URL.
 
-In theory browsers could be smarter and relax this limitation when necessary. In such hypothetical case, is there a __better encoding__ for Data URLs? Or, to pose a broader question, - 
+In theory browsers could be smarter and relax this limitation when necessary. So let's put another question -  
 
-### Is there a better encoding for non-textual data inlined in HTML/CSS files?
+### Is there a better encoding for non-textual data inlined in HTML files?
 
-At first glance, there must be a lot of space for improvement. Because HTML and CSS files can contain __any Unicode__ characters and it's more than 1 million. So it must be possible to find 256 characters to encode images, isn't it? Such encoding would have no (or almost no) memory overhead.
+After all, Data URLs are not the only way to embed non-textual data in HTML files. Technically you can insert the encoded stuff almost anywhere in HTML and use it in your own homemade solutions. So you are not restricted to url-safe alphabet and therefore can think about a better encoding than base64.
+
+*(CSS gives less freedom with embedding so let's set it aside)*
+
+At first glance, there must be a lot of space for improvement. Because HTML files can contain __any Unicode__ characters and it's more than 1 million. So it must be possible to find 256 characters to encode images, isn't it? Such encoding would have no (or almost no) memory overhead.
 
 In practice everything is much more complicated. Why not encode stuff with chinese characters, for example? Because they are too heavy. They take 3 or even 4 bytes of memory. That's how UTF-8 encoding works - it uses different number of bytes for different characters. And we are interested only in 1-byte characters.
 
 (We could consider using multi-byte characters for our baseNNN encoding but let's not go into that. We need only 1-byte characters, let's take it as an axiom).
 
-How many 1-byte characters are there in UTF-8? Only 128, and it's a good old ASCII range. Can we take all of them? No, because, again, we need only printable characters. We really need to see them in text editors and dev tools and elsewhere. Then, just like in case of SMTP, we have to exclude a bunch of visible characters because they are special characters in HTML or CSS. For example, double quote (") won't do because it can prematurely terminate the Data URL string, like this: `
+How many 1-byte characters are there in UTF-8? Only 128, and it's a good old ASCII range. Can we take all of them? No, because, again, we need only printable characters. We really need to see them in text editors and dev tools and elsewhere. Then, just like in case of SMTP, we have to exclude a bunch of visible characters because they are special characters in HTML. For example, double quote (") won't do because it can prematurely terminate the Data URL string, like this: `
 <img src="data:image/png;base64,iVBOR"w0KAA" />`
 
 So a possible alphabet again shrinks to 80-90 characters. This in theory allows to create another encoding that will use slightly less memory than base64. Such encodings actually exist, for example base85 made in Adobe. It is more memory-efficient because it encodes 4 bytes of original data into 5 characters. But base85 is also much slower to compute so its overall benefits are tiny, if any. And by the way it's not intended for web development and contains characters that can break things in HTML and CSS. (Though it must be possible to build a similar but web-friendly algorithm by swapping some characters).
+
+*Can we find a better baseXXX for other kinds of text files (JSON, XML etc)? It seems unlikely because these formats are predominantly UTF-8-encoded and this means roughly the same limitations as in case of HTML. Only the amount of special printable characters may differ (it's very small in JSON for example) but it's not a big deal.*
 
 ---
 
