@@ -1,0 +1,42 @@
+### Historical cause ###
+
+Originally base64 was introduced as part of MIME (extension of SMTP protocol). It allowed to present any data as text consisting of only the most safe characters. "Safe" means that:
+1) all these characters were from **ASCII** range. Because SMTP allowed only ASCII to be transferred between email servers.
+2) half of ASCII characters was left out because they were still unsafe, although valid. These are first of all 30+ **non-printable** characters, or "control characters", for example "Delete" or "Line feed".
+
+    Many of the printable characters also couldn't be used because they are **special characters** and can produce undesired effects too (in SMTP message these are angle brackets, quotation marks and many more).
+
+    In the end there were about 80-90 characters that could be transmitted via SMTP without being rejected and without breaking the message entirely. Only 64 characters made it to the final alphabet and it was probably because 64 is cheaper to deal with algorithmically.
+
+Using only ASCII characters solved one more problem of SMTP:
+
+3) it allowed to transfer any kind of data through **7-bit** channels. SMTP was designed to deal with 7-bit bytes because that's how things worked in 1980s. So you couldn't just transfer modern 8-bit data across SMTP.
+
+    But when data is encoded to ASCII characters, it becomes **easy to convert** it to 7 or 8 bits for a specific case. That's because ASCII characters actually require only 7 bits of memory. They are only artificially fattened to 8 bits by adding a "0" bit before the original 7. So a conversion between 7-bit and 8-bit ASCII characters is just a matter of adding/removing this leftmost bit.
+
+### Modern cause ###
+
+Using only 64 characters made base64 a truly universal solution for numerous cases where some non-textual stuff has to be transferred or stored alongside textual stuff.
+
+It turned out especially handy in **web development** where you often need some fancy tricks to make stuff more performant or safe or whatever. In the web base64 is used for instance
+- to encode username and password in "Authentication" header as part of "Basic HTTP authentication" scheme
+- to inline images in HTML/CSS files
+- to store non-English text in cookies
+
+Using base64 in the web (and other modern systems) may look a little strange because
+**a)** in modern systems we don't have these weird restrictions as SMTP had and
+**b)** base64 has this notorious 33% (or 37% or whatever) memory overhead.
+
+### Alternatives?
+
+So aren't we wasting precious bytes to bypass limitations that no longer exist? Answer is no because limitations really didn't change that much.
+
+For example, it may seem that HTML is much more permissive. HTML files can contain all Unicode and it's more than a million characters.
+
+But for encoding alphabet we need only **1-byte characters** (it's cumbersome to explain why). UTF-8 contains only **128** such characters and it's a good old **ASCII** range. Then we again have to exclude non-printable and other special characters and in the end we are left with the same 80-90 permissible characters.
+
+It gives some space for improvement - we can think of a more efficient encoding that uses not 64 but for example **85 characters** (and therefore wastes less memory).
+
+**Base85** actually exists and is used in various fields. It saves some bytes but it's also much slower than base64 so the overall benefits are unclear.
+
+There are also several other encodings (rather neglected) that use approximately the same number of characters and claim to be more performant but I can't say if it's true.
